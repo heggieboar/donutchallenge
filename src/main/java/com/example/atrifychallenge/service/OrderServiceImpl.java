@@ -10,6 +10,8 @@ import javax.persistence.EntityExistsException;
 import java.util.*;
 import java.util.stream.Collectors;
 
+import static java.util.stream.Collectors.partitioningBy;
+
 @Service
 public class OrderServiceImpl implements OrderService {
 
@@ -20,7 +22,6 @@ public class OrderServiceImpl implements OrderService {
     @Override
     public void addOrderToQ(DonutOrder donutOrder) throws EntityExistsException {
 
-        int size;
         // add order to the Q
         //check if client order exists
         for (DonutOrder order : pq.getPriorityQ()) {
@@ -29,28 +30,24 @@ public class OrderServiceImpl implements OrderService {
             }
         }
         pq.getPriorityQ().add(donutOrder);
-
-        size = pq.getPriorityQ().size();
-        if (pq.getPriorityQ().size() == 7) {
-            this.sortQ();
-            System.out.println();
-        }
+        this.sortQ();
 
     }
 
     private void sortQ() {
         //sort the list by Id and seconds
-        Comparator<DonutOrder> compareById =
-                Comparator.comparing(DonutOrder::getStartTimeStamp).reversed();
 
-        List<DonutOrder> sortedQ = pq.getPriorityQ()
+        Map<Boolean, List<DonutOrder>> sortedList =  pq.getPriorityQ()
                 .stream()
-                .sorted(compareById)
-                .collect(Collectors.toList());
+                .sorted(Comparator.comparing(DonutOrder::getStartTimeStamp)
+                        .thenComparing(DonutOrder::getCustomerID))
+                .collect(Collectors.partitioningBy(o -> o.getCustomerID() < 1001));
 
-        for (DonutOrder o : sortedQ) {
+        System.out.println();
+
+        /*for (DonutOrder o : sortedList.get()) {
             System.out.println("ID : " + o.getCustomerID() + " Time : " + o.getStartTimeStamp());
-        }
+        }*/
     }
 
     @Override
@@ -104,4 +101,6 @@ public class OrderServiceImpl implements OrderService {
 
         return pq.getPriorityQ().remove(order);
     }
+
+
 }
