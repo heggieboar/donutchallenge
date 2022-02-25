@@ -8,6 +8,7 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.context.annotation.Bean;
 
 import java.time.Instant;
+import java.util.Random;
 
 @SpringBootApplication
 public class AtrifyChallengeApplication {
@@ -29,5 +30,4 @@ public class AtrifyChallengeApplication {
             service.addOrderToQ(new DonutOrder(1515L, 20L));
         };
     }
-
 }

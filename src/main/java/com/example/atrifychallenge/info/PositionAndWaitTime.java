@@ -1,25 +1,32 @@
 package com.example.atrifychallenge.info;
 
-import java.time.Duration;
-import java.time.Instant;
-import java.time.LocalTime;
 
+import lombok.extern.slf4j.Slf4j;
 
+import java.util.Date;
+
+@Slf4j
 public class PositionAndWaitTime {
 
-    private final Long timePassed ;
+    private final long waitTime;
     private final int position;
 
-    public PositionAndWaitTime(Long start, int position) {
-        this.timePassed = Instant.now().getEpochSecond() - start;
+
+    public PositionAndWaitTime(Date startTime, int position) {
         this.position = position;
+        this.waitTime = new Date(System.currentTimeMillis()).getTime() - startTime.getTime();
     }
 
-    public Long getTimePassed() {
-        return timePassed;
+    public long getWaitTime() {
+        return waitTime;
     }
 
     public int getPosition() {
         return position;
     }
+
+    public String getTimeDifference(long waitingTime) {
+       return (waitingTime / (1000 *60)) % 60 + "Min" + (waitingTime / 1000) % 60 + " Sec";
+    }
+
 }

@@ -37,7 +37,7 @@ public class OrderApi {
         System.out.println("Queue Position "
                 + positionAndWaitTime.getPosition()
                 + " Approximate Wait time"
-                + positionAndWaitTime.getTimePassed());
+                + positionAndWaitTime.getWaitTime());
 
         return ResponseEntity.ok().body(orderService.checkPositionAndWait(id));
     }

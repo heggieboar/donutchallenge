@@ -7,9 +7,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import javax.persistence.EntityExistsException;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Comparator;
+import java.util.*;
+import java.util.stream.Collectors;
 
 @Service
 public class OrderServiceImpl implements OrderService {
@@ -21,16 +20,37 @@ public class OrderServiceImpl implements OrderService {
     @Override
     public void addOrderToQ(DonutOrder donutOrder) throws EntityExistsException {
 
+        int size;
         // add order to the Q
         //check if client order exists
-
         for (DonutOrder order : pq.getPriorityQ()) {
             if (order.getCustomerID().equals(donutOrder.getCustomerID())) {
                 throw new EntityExistsException();
             }
         }
         pq.getPriorityQ().add(donutOrder);
-        pq.getPriorityQ().sort(Comparator.comparing(DonutOrder::getCustomerID));
+
+        size = pq.getPriorityQ().size();
+        if (pq.getPriorityQ().size() == 7) {
+            this.sortQ();
+            System.out.println();
+        }
+
+    }
+
+    private void sortQ() {
+        //sort the list by Id and seconds
+        Comparator<DonutOrder> compareById =
+                Comparator.comparing(DonutOrder::getStartTimeStamp).reversed();
+
+        List<DonutOrder> sortedQ = pq.getPriorityQ()
+                .stream()
+                .sorted(compareById)
+                .collect(Collectors.toList());
+
+        for (DonutOrder o : sortedQ) {
+            System.out.println("ID : " + o.getCustomerID() + " Time : " + o.getStartTimeStamp());
+        }
     }
 
     @Override
