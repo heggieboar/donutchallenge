@@ -11,7 +11,6 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.Collection;
-import java.util.List;
 
 @RestController
 @RequestMapping("/api/v1")
@@ -45,12 +44,14 @@ public class OrderApi {
 
     @GetMapping("/delivery")
     public ResponseEntity<Collection<DonutOrder>> fillCartForDelivery() {
+        log.info("Size of delivery {} ", orderService.getNextDelivery().size());
         return ResponseEntity.ok().body(orderService.getNextDelivery());
     }
 
 
     @DeleteMapping("/delete/{clientid}")
     public ResponseEntity<?> deleteCancelOrder(@PathVariable("clientid") Long clientId) {
+
         orderService.cancelOrder(clientId);
         return new ResponseEntity<>(HttpStatus.OK);
     }
