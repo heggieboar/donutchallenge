@@ -17,6 +17,9 @@ public class OrderServiceImpl implements OrderService {
 
     //One Q for all orders
     private final PriorityQ pq = PriorityQ.getInstance();
+    private int premiumIndex = -1;
+    private int cartSize = 0;
+    private final int MAX_DONUT_COUNT = 50;
 
 
     @Override
@@ -29,15 +32,23 @@ public class OrderServiceImpl implements OrderService {
                 throw new EntityExistsException();
             }
         }
-        pq.getPriorityQ().add(donutOrder);
-        this.sortQ();
+
+        if (donutOrder.getCustomerID() < 1001) {
+            pq.getPriorityQ().add(++premiumIndex, donutOrder);
+        } else {
+            pq.getPriorityQ().add(donutOrder);
+        }
+
+        //this.sortQ();
+
+        System.out.println();
 
     }
 
     private void sortQ() {
         //sort the list by Id and seconds
 
-        Map<Boolean, List<DonutOrder>> sortedList =  pq.getPriorityQ()
+        Map<Boolean, List<DonutOrder>> sortedList = pq.getPriorityQ()
                 .stream()
                 .sorted(Comparator.comparing(DonutOrder::getStartTimeStamp)
                         .thenComparing(DonutOrder::getCustomerID))
@@ -74,21 +85,19 @@ public class OrderServiceImpl implements OrderService {
 
     @Override
     public Collection<DonutOrder> getNextDelivery() {
+        List<DonutOrder> cart = new ArrayList<>();
+        int result = 0;
 
-        long MAX_SIZE = 50L;
-        long result = 0;
-        Collection<DonutOrder> newList = new ArrayList<>();
-        Collection<DonutOrder> orders = this.allDonutOrderInQ();
-        for (DonutOrder anOrder : orders) {
-
-            result += anOrder.getDonutQty();
-            newList.add(anOrder);
-            if (result > 50) {
+        for (DonutOrder order : pq.getPriorityQ()) {
+            result += order.getDonutQty();
+            cartSize++;
+            cart.add(order);
+            if (result >= MAX_DONUT_COUNT) {
                 break;
             }
         }
-
-        return newList;
+        System.out.println(result);
+        return cart;
     }
 
     @Override
