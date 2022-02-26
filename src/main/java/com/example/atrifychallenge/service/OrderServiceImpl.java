@@ -3,15 +3,12 @@ package com.example.atrifychallenge.service;
 import com.example.atrifychallenge.domain.DonutOrder;
 import com.example.atrifychallenge.domain.PriorityQ;
 import com.example.atrifychallenge.info.PositionAndWaitTime;
+import javafx.geometry.Pos;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import javax.persistence.EntityExistsException;
 import java.util.*;
-import java.util.stream.Collectors;
-
-import static java.util.stream.Collectors.partitioningBy;
 
 @Service
 @Slf4j
@@ -23,46 +20,44 @@ public class OrderServiceImpl implements OrderService {
     private int cartSize = 0;
 
     @Override
-    public void addOrderToQ(DonutOrder donutOrder) throws EntityExistsException {
+    public DonutOrder addOrderToQ(DonutOrder donutOrder) throws EntityExistsException {
 
-        // add order to the Q
-        //check if client order exists
-        for (DonutOrder order : pq.getPriorityQ()) {
-            if (order.getCustomerID().equals(donutOrder.getCustomerID())) {
-                throw new EntityExistsException();
+        // prevent taking deliveries while inserting
+        synchronized (pq.getPriorityQ()) {
+            // add order to the Q
+            //check if client order exists
+            for (DonutOrder order : pq.getPriorityQ()) {
+                if (order.getCustomerID().equals(donutOrder.getCustomerID())) {
+                    throw new EntityExistsException();
+                }
+            }
+
+            //get new premium index in case an order has been pull
+            if (pq.getPriorityQ().size() > 0) {
+                if (cartSize > 0) {
+                    premiumIndex = premiumIndex - cartSize;
+                    cartSize = 0;
+                }
+            } else {
+                premiumIndex = -1; // if the Q is empty - reset our premium index
+            }
+
+            if (donutOrder.getCustomerID() < 1001) {
+                pq.getPriorityQ().add(++premiumIndex, donutOrder);
+            } else {
+                pq.getPriorityQ().add(donutOrder);
             }
         }
-
-        //get new premium index in case an order has been pull
-        if (pq.getPriorityQ().size() > 0) {
-            if (cartSize > 0) {
-                premiumIndex = premiumIndex - cartSize;
-                cartSize = 0;
-            }
-        } else {
-            premiumIndex = -1; // if the Q is empty - reset our premium index
-        }
-
-
-        if (donutOrder.getCustomerID() < 1001) {
-            pq.getPriorityQ().add(++premiumIndex, donutOrder);
-        } else {
-            pq.getPriorityQ().add(donutOrder);
-        }
-
         log.info("Size {} ", pq.getPriorityQ().size());
-
+        return donutOrder;
     }
 
-    /*private void sortQ() {
+    private void sortQ() {
         //sort the list by Id and seconds
 
-        Map<Boolean, List<DonutOrder>> sortedList = pq.getPriorityQ()
-                .stream()
-                .sorted(Comparator.comparing(DonutOrder::getStartTimeStamp)
-                        .thenComparing(DonutOrder::getCustomerID))
-                .collect(Collectors.partitioningBy(o -> o.getCustomerID() < 1001));
-    }*/
+        pq.getPriorityQ().sort(Comparator.comparing(DonutOrder::isPremiumCustomer)
+                .thenComparing(DonutOrder::getStartTimeStamp));
+    }
 
     @Override
     public PositionAndWaitTime checkPositionAndWait(Long clientId) {
@@ -82,8 +77,18 @@ public class OrderServiceImpl implements OrderService {
     }
 
     @Override
-    public Collection<DonutOrder> allDonutOrderInQ() {
-        return pq.getPriorityQ();
+    public Map<PositionAndWaitTime, DonutOrder> allDonutOrderInQ() {
+
+        Map<PositionAndWaitTime, DonutOrder> ordersAndWaitingTimes = new HashMap<>();
+
+        for (DonutOrder donutOrder : pq.getPriorityQ()) {
+            int position = pq.getPriorityQ().indexOf(donutOrder) + 1;
+
+            ordersAndWaitingTimes.put(new PositionAndWaitTime(donutOrder.getStartTimeStamp(),
+                    position), donutOrder);
+
+        }
+        return ordersAndWaitingTimes;
     }
 
     @Override
@@ -92,37 +97,42 @@ public class OrderServiceImpl implements OrderService {
         long result = 0;
         cartSize = 0;
 
-        for (DonutOrder order : pq.getPriorityQ()) {
+        synchronized (pq.getPriorityQ()) {
+            for (DonutOrder order : pq.getPriorityQ()) {
 
-            result += order.getDonutQty();
-            int MAX_DONUT_COUNT = 50;
-            if (result > MAX_DONUT_COUNT) {
-                //donut count has been acceded
-                //rollback and remove the extra order
-                result = result - order.getDonutQty();
-                break;
-            } else {
-                cartSize++;
-                cart.add(order);
+                result += order.getDonutQty();
+                int MAX_DONUT_COUNT = 50;
+                if (result > MAX_DONUT_COUNT) {
+                    //donut count has been acceded
+                    //rollback and remove the extra order
+                    result = result - order.getDonutQty();
+                    break;
+                } else {
+                    cartSize++;
+                    cart.add(order);
+                }
             }
-        }
 
-        for (DonutOrder cartOrder : cart) {
-            pq.getPriorityQ().removeIf(qOrder -> cartOrder.getCustomerID()
-                    .equals(qOrder.getCustomerID()));
+            for (DonutOrder cartOrder : cart) {
+                pq.getPriorityQ().removeIf(qOrder -> cartOrder.getCustomerID()
+                        .equals(qOrder.getCustomerID()));
+            }
+            log.info("Total donuts in cart {} ", result);
         }
-        log.info("Total donuts in cart {} ", result);
         return cart;
     }
 
     @Override
-    public boolean cancelOrder(Long clientId) {
-        DonutOrder order = pq.getPriorityQ()
-                .stream()
-                .filter(client -> clientId.equals(client.getCustomerID()))
-                .findFirst()
-                .orElse(new DonutOrder());
+    public void cancelOrder(Long clientId) {
+        //lock list
+        //update index
+        synchronized (pq.getPriorityQ()) {
+            if (clientId < 1001) {
+                premiumIndex--;
+            }
+            pq.getPriorityQ()
+                    .removeIf(qOrder -> (qOrder.getCustomerID().equals(clientId)));
+        }
 
-        return pq.getPriorityQ().remove(order);
     }
 }

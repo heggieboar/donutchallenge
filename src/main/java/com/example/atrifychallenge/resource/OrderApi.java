@@ -11,6 +11,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.Collection;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/api/v1")
@@ -22,13 +23,13 @@ public class OrderApi {
     private OrderService orderService;
 
     @PostMapping("/add")
-    public void addNewOrder(@RequestBody DonutOrder newOrder) {
-        orderService.addOrderToQ(newOrder);
+    public DonutOrder addNewOrder(@RequestBody DonutOrder newOrder) {
+       return orderService.addOrderToQ(newOrder);
     }
 
     @GetMapping("/orders")
-    public ResponseEntity<Collection<DonutOrder>> getOrders() {
-        return ResponseEntity.ok().body(orderService.allDonutOrderInQ());
+    public Map<PositionAndWaitTime, DonutOrder> getAllOrdersWithWaitingTime() {
+        return orderService.allDonutOrderInQ();
     }
 
     @GetMapping("/orderstatus/{id}")

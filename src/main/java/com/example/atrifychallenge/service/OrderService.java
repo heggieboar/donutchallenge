@@ -6,14 +6,15 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 
 import java.util.Collection;
+import java.util.Map;
 
 @Service
 public interface OrderService {
 
-    void addOrderToQ(DonutOrder donutOrder);
+    DonutOrder addOrderToQ(DonutOrder donutOrder);
     PositionAndWaitTime checkPositionAndWait(Long clientId);
-    Collection<DonutOrder> allDonutOrderInQ();
+    Map<PositionAndWaitTime, DonutOrder> allDonutOrderInQ();
     Collection<DonutOrder> getNextDelivery();
-    boolean cancelOrder(Long id);
+    void cancelOrder(Long id);
 
 }

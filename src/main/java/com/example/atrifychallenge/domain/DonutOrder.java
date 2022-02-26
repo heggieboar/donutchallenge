@@ -66,6 +66,10 @@ public class DonutOrder implements Comparable<DonutOrder> {
         this.startTimeStamp = startTimeStamp;
     }
 
+    public boolean isPremiumCustomer() {
+        return this.customerID > 1000;
+    }
+
 
     @Override
     public int compareTo(DonutOrder o) {
