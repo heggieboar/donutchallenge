@@ -4,6 +4,7 @@ import com.example.atrifychallenge.domain.DonutOrder;
 import com.example.atrifychallenge.info.PositionAndWaitTime;
 import com.example.atrifychallenge.service.OrderService;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -15,6 +16,7 @@ import java.util.List;
 @RestController
 @RequestMapping("/api/v1")
 @RequiredArgsConstructor
+@Slf4j
 public class OrderApi {
 
     @Autowired
@@ -35,10 +37,8 @@ public class OrderApi {
 
         PositionAndWaitTime positionAndWaitTime = orderService.checkPositionAndWait(id);
 
-        System.out.println("Queue Position "
-                + positionAndWaitTime.getPosition()
-                + " Approximate Wait time"
-                + positionAndWaitTime.getWaitTime());
+        log.info("Queue Position {} ", positionAndWaitTime.getPosition());
+        log.info(" Approximate Wait time {} ", (positionAndWaitTime.getWaitTime() / 1000) % 60);
 
         return ResponseEntity.ok().body(orderService.checkPositionAndWait(id));
     }

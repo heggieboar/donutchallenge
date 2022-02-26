@@ -34,10 +34,15 @@ public class OrderServiceImpl implements OrderService {
         }
 
         //get new premium index in case an order has been pull
-        if (cartSize > 0) {
-            premiumIndex = premiumIndex - cartSize;
-            cartSize = 0;
+        if (pq.getPriorityQ().size() > 0) {
+            if (cartSize > 0) {
+                premiumIndex = premiumIndex - cartSize;
+                cartSize = 0;
+            }
+        } else {
+            premiumIndex = -1; // if the Q is empty - reset our premium index
         }
+
 
         if (donutOrder.getCustomerID() < 1001) {
             pq.getPriorityQ().add(++premiumIndex, donutOrder);
@@ -45,13 +50,11 @@ public class OrderServiceImpl implements OrderService {
             pq.getPriorityQ().add(donutOrder);
         }
 
-        //this.sortQ();
-
         log.info("Size {} ", pq.getPriorityQ().size());
 
     }
 
-    private void sortQ() {
+    /*private void sortQ() {
         //sort the list by Id and seconds
 
         Map<Boolean, List<DonutOrder>> sortedList = pq.getPriorityQ()
@@ -59,7 +62,7 @@ public class OrderServiceImpl implements OrderService {
                 .sorted(Comparator.comparing(DonutOrder::getStartTimeStamp)
                         .thenComparing(DonutOrder::getCustomerID))
                 .collect(Collectors.partitioningBy(o -> o.getCustomerID() < 1001));
-    }
+    }*/
 
     @Override
     public PositionAndWaitTime checkPositionAndWait(Long clientId) {
@@ -69,7 +72,7 @@ public class OrderServiceImpl implements OrderService {
 
         for (DonutOrder donutOrder : pq.getPriorityQ()) {
             if (donutOrder.getCustomerID().equals(clientId)) {
-                position = pq.getPriorityQ().indexOf(donutOrder);
+                position = pq.getPriorityQ().indexOf(donutOrder) + 1;
 
                 positionAndWaitTime = new PositionAndWaitTime(donutOrder.getStartTimeStamp(),
                         position);
@@ -122,6 +125,4 @@ public class OrderServiceImpl implements OrderService {
 
         return pq.getPriorityQ().remove(order);
     }
-
-
 }
