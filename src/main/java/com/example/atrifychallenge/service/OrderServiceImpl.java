@@ -3,6 +3,7 @@ package com.example.atrifychallenge.service;
 import com.example.atrifychallenge.domain.DonutOrder;
 import com.example.atrifychallenge.domain.PriorityQ;
 import com.example.atrifychallenge.info.PositionAndWaitTime;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -13,14 +14,13 @@ import java.util.stream.Collectors;
 import static java.util.stream.Collectors.partitioningBy;
 
 @Service
+@Slf4j
 public class OrderServiceImpl implements OrderService {
 
     //One Q for all orders
     private final PriorityQ pq = PriorityQ.getInstance();
     private int premiumIndex = -1;
     private int cartSize = 0;
-    private final int MAX_DONUT_COUNT = 50;
-
 
     @Override
     public void addOrderToQ(DonutOrder donutOrder) throws EntityExistsException {
@@ -33,6 +33,12 @@ public class OrderServiceImpl implements OrderService {
             }
         }
 
+        //get new premium index in case an order has been pull
+        if (cartSize > 0) {
+            premiumIndex = premiumIndex - cartSize;
+            cartSize = 0;
+        }
+
         if (donutOrder.getCustomerID() < 1001) {
             pq.getPriorityQ().add(++premiumIndex, donutOrder);
         } else {
@@ -41,7 +47,7 @@ public class OrderServiceImpl implements OrderService {
 
         //this.sortQ();
 
-        System.out.println();
+        log.info("Size {} ", pq.getPriorityQ().size());
 
     }
 
@@ -53,12 +59,6 @@ public class OrderServiceImpl implements OrderService {
                 .sorted(Comparator.comparing(DonutOrder::getStartTimeStamp)
                         .thenComparing(DonutOrder::getCustomerID))
                 .collect(Collectors.partitioningBy(o -> o.getCustomerID() < 1001));
-
-        System.out.println();
-
-        /*for (DonutOrder o : sortedList.get()) {
-            System.out.println("ID : " + o.getCustomerID() + " Time : " + o.getStartTimeStamp());
-        }*/
     }
 
     @Override
@@ -86,17 +86,29 @@ public class OrderServiceImpl implements OrderService {
     @Override
     public Collection<DonutOrder> getNextDelivery() {
         List<DonutOrder> cart = new ArrayList<>();
-        int result = 0;
+        long result = 0;
+        cartSize = 0;
 
         for (DonutOrder order : pq.getPriorityQ()) {
+
             result += order.getDonutQty();
-            cartSize++;
-            cart.add(order);
-            if (result >= MAX_DONUT_COUNT) {
+            int MAX_DONUT_COUNT = 50;
+            if (result > MAX_DONUT_COUNT) {
+                //donut count has been acceded
+                //rollback and remove the extra order
+                result = result - order.getDonutQty();
                 break;
+            } else {
+                cartSize++;
+                cart.add(order);
             }
         }
-        System.out.println(result);
+
+        for (DonutOrder cartOrder : cart) {
+            pq.getPriorityQ().removeIf(qOrder -> cartOrder.getCustomerID()
+                    .equals(qOrder.getCustomerID()));
+        }
+        log.info("Total donuts in cart {} ", result);
         return cart;
     }
 
