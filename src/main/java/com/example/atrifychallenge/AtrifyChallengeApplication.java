@@ -28,6 +28,8 @@ public class AtrifyChallengeApplication {
             service.addOrderToQ(new DonutOrder(1L, 30L));
             service.addOrderToQ(new DonutOrder(885L, 10L));
             service.addOrderToQ(new DonutOrder(1515L, 20L));
+            service.addOrderToQ(new DonutOrder(1615L, 10L));
+            service.addOrderToQ(new DonutOrder(115L, 11L));
         };
     }
 }

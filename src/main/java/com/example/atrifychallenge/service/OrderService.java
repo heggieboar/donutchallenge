@@ -11,7 +11,7 @@ import java.util.Map;
 @Service
 public interface OrderService {
 
-    DonutOrder addOrderToQ(DonutOrder donutOrder);
+    DonutOrder addOrderToQ(DonutOrder donutOrder) throws Exception;
     PositionAndWaitTime checkPositionAndWait(Long clientId);
     Map<PositionAndWaitTime, DonutOrder> allDonutOrderInQ();
     Collection<DonutOrder> getNextDelivery();

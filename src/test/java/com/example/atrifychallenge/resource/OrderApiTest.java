@@ -80,9 +80,10 @@ class OrderApiTest {
     }
 
     @Test
-    void addNewOrder() {
-        DonutOrder order = new DonutOrder(createIds(), createQtys());
-        order.setStartTimeStamp(createRandomDate());
+    void addNewOrder() throws Exception {
+        //DonutOrder order = new DonutOrder(createIds(), createQtys());
+        DonutOrder order = new DonutOrder(20001L, 60L);
+        //order.setStartTimeStamp(createRandomDate());
 
         Mockito.when(orderApi.addNewOrder(order)).thenReturn(order);
 

@@ -22,6 +22,7 @@ public class DonutOrder implements Comparable<DonutOrder> {
     private Long customerID;
     private Long donutQty;
     private Date startTimeStamp;
+    private int position;
 
     public DonutOrder(Long customerID, Long donutQty) {
         this.customerID = customerID;
@@ -70,6 +71,13 @@ public class DonutOrder implements Comparable<DonutOrder> {
         return this.customerID > 1000;
     }
 
+    public int getPosition() {
+        return position;
+    }
+
+    public void setPosition(int position) {
+        this.position = position;
+    }
 
     @Override
     public int compareTo(DonutOrder o) {

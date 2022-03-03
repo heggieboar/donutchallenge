@@ -22,9 +22,15 @@ public class OrderApi {
     @Autowired
     private OrderService orderService;
 
-    @PostMapping("/add")
+    @PostMapping("/orders")
     public DonutOrder addNewOrder(@RequestBody DonutOrder newOrder) {
-       return orderService.addOrderToQ(newOrder);
+        DonutOrder order = null;
+       try {
+           order = orderService.addOrderToQ(newOrder);
+       } catch(Exception ex) {
+           System.out.println(ex.getMessage());
+       }
+       return order;
     }
 
     @GetMapping("/orders")
@@ -32,7 +38,7 @@ public class OrderApi {
         return orderService.allDonutOrderInQ();
     }
 
-    @GetMapping("/orderstatus/{id}")
+    @GetMapping("/orders/{id}")
     public ResponseEntity<PositionAndWaitTime> getPositionAndWaitTime(@PathVariable("id") Long id) {
 
         PositionAndWaitTime positionAndWaitTime = orderService.checkPositionAndWait(id);
@@ -43,14 +49,14 @@ public class OrderApi {
         return ResponseEntity.ok().body(orderService.checkPositionAndWait(id));
     }
 
-    @GetMapping("/delivery")
+    @GetMapping("/orders/delivery")
     public ResponseEntity<Collection<DonutOrder>> fillCartForDelivery() {
         log.info("Size of delivery {} ", orderService.getNextDelivery().size());
         return ResponseEntity.ok().body(orderService.getNextDelivery());
     }
 
 
-    @DeleteMapping("/delete/{clientid}")
+    @DeleteMapping("/orders/{clientid}")
     public ResponseEntity<?> deleteCancelOrder(@PathVariable("clientid") Long clientId) {
 
         orderService.cancelOrder(clientId);

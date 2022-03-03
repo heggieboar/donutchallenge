@@ -20,7 +20,7 @@ public class OrderServiceImpl implements OrderService {
     private int cartSize = 0;
 
     @Override
-    public DonutOrder addOrderToQ(DonutOrder donutOrder) throws EntityExistsException {
+    public DonutOrder addOrderToQ(DonutOrder donutOrder) throws Exception {
 
         // prevent taking deliveries while inserting
         synchronized (pq.getPriorityQ()) {
@@ -30,6 +30,15 @@ public class OrderServiceImpl implements OrderService {
                 if (order.getCustomerID().equals(donutOrder.getCustomerID())) {
                     throw new EntityExistsException();
                 }
+            }
+
+            if(donutOrder.getCustomerID() > 20000) {
+                log.error("ID exceeded {} ", donutOrder.getCustomerID());
+                throw new Exception("ID exceeds 20000");
+            }
+            if(donutOrder.getDonutQty() > 50) {
+                log.error("Donut quantity exceeded {} ", donutOrder.getDonutQty());
+                throw new Exception("Donut Quantity should not exceed 50");
             }
 
             //get new premium index in case an order has been pull
